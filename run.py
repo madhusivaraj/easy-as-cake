@@ -7,7 +7,7 @@ from dateutil import parser
 import csv
 import json
 import pandas as pd
-import datetime
+from datetime import datetime
 
 SCOPES = 'https://www.googleapis.com/auth/calendar'
 
@@ -17,7 +17,8 @@ FIRSTNAME_COL = "FIRST NAME"
 LASTNAME_COL = "LAST NAME"
 STARTTIME_COL = "START TIME"
 ENDTIME_COL = "END TIME"
-YEAR='2018'
+YEAR=str(datetime.now().year)
+
 
 def main():
     birthday_df = pd.read_csv(FILE)
@@ -31,32 +32,31 @@ def main():
     for row in birthday_df.iterrows():
         info = {} 
         birth_date = row[1][birthday_df.columns.get_loc(BIRTHDAY_COL)]
-        birthdayList = birth_date.split('/')
+        birthday_list = birth_date.split('/')
+        birthday_list[-1] = YEAR
+      
         
-        if(int(birthdayList[0])>11):
-            birthdayList[-1] = YEAR
-        else:
-            birthdayList[-1] = '2019'
-        
-        birthday = "./".join(birthdayList)
+        birthday = "./".join(birthday_list)
         birthday = birthday.replace(' ','T')
         birthday = parser.parse(birthday)
         birthday = str(birthday).replace(' ', 'T')
-        fullName = row[1][birthday_df.columns.get_loc(FIRSTNAME_COL)] +" "+ row[1][birthday_df.columns.get_loc(LASTNAME_COL)]
+        full_name = row[1][birthday_df.columns.get_loc(FIRSTNAME_COL)] +" "+ row[1][birthday_df.columns.get_loc(LASTNAME_COL)]
         
-        info["name"] = fullName
-        info["begin"] = json.dumps(birthday, default = timeConversion)
-        info["end"] = json.dumps(birthday.replace("00:00:00","23:59:00"), default = timeConversion) 
-        new = addBirthday(info)
+        info["name"] = full_name
+        info["begin"] = json.dumps(birthday, default = convert_time)
+        info["end"] = json.dumps(birthday.replace("00:00:00","23:59:00"), default = convert_time) 
+        new = add_birthday(info)
         
         event = service.events().insert(calendarId='primary', body=new).execute()
-        print('Event added: ', fullName)
+        print('Birthday added: ', full_name)
 
-def timeConversion(time):
+
+def convert_time(time):
     if isinstance(time, datetime.datetime):
         return time.__str__()
 
-def addBirthday(list):
+
+def add_birthday(list):
     TIMEZONE = 'America/New_York'
     RRule = 'RRULE:FREQ=YEARLY'
     event = {
